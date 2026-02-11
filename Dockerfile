@@ -77,7 +77,7 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile && pnpm store prune
 # Install MCPorter CLI so the mcporter skill can execute it
-RUN pnpm install -g mcporter
+RUN npm install -g mcporter
 
 # Vendor mcporter skill from OpenClaw repo into image
 RUN set -eux; \
