@@ -7,6 +7,8 @@ import path from "node:path";
 import express from "express";
 import httpProxy from "http-proxy";
 import * as tar from "tar";
+import { bootstrapOpenClaw } from "./bootstrap.mjs";
+
 
 // Railway commonly sets PORT=8080 for HTTP services.
 const PORT = Number.parseInt(process.env.PORT ?? "8080", 10);
@@ -751,7 +753,7 @@ app.post("/setup/api/run", requireSetupAuth, async (req, res) => {
           extra += `\n[slack verify] exit=${get.code} (output ${get.output.length} chars)\n${get.output || "(no output)"}`;
         }
       }
-
+      bootstrapOpenClaw();
       // Apply changes immediately.
       await restartGateway();
     }
