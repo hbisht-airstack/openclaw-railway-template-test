@@ -76,6 +76,8 @@ WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile && pnpm store prune
+# Install MCPorter CLI so the mcporter skill can execute it
+RUN pnpm install -g mcporter
 
 # Copy built openclaw
 COPY --from=openclaw-build /openclaw /openclaw
@@ -88,4 +90,5 @@ COPY src ./src
 
 ENV PORT=8080
 EXPOSE 8080
-CMD ["node", "src/server.js"]
+#CMD ["node", "src/server.js"]
+CMD ["bash", "-lc", "node src/bootstrap.js && node src/server.js"]
