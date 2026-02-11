@@ -4,7 +4,8 @@ import path from "node:path";
 const STATE_DIR = process.env.OPENCLAW_STATE_DIR || "/data/.openclaw";
 const WORKSPACE_DIR = process.env.OPENCLAW_WORKSPACE_DIR || "/data/workspace";
 const MCPORTER_PATH =
-  process.env.MCPORTER_CONFIG || path.join(STATE_DIR, "config", "mcporter.json");
+  process.env.MCPORTER_CONFIG ||
+  path.join(STATE_DIR, "config", "mcporter.json");
 
 const IMAGE_SKILLS_DIR = "/opt/openclaw-skills";
 const STATE_SKILLS_DIR = path.join(STATE_DIR, "skills");
@@ -14,7 +15,12 @@ function ensureDir(p) {
 }
 
 function exists(p) {
-  try { fs.accessSync(p); return true; } catch { return false; }
+  try {
+    fs.accessSync(p);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Recursive copy (Node 22 supports fs.cpSync)
@@ -50,23 +56,26 @@ function patchOpenClawJson() {
         // Optional: model routing rules (uncomment if you want enforced defaults)
         // model: {
         //   primary: "anthropic/claude-haiku-4-5",
-        //   fallbacks: ["anthropic/claude-sonnet-4-5", "anthropic/claude-opus-4-6"]
+        //   fallbacks: [
+        //     "anthropic/claude-sonnet-4-5",
+        //     "anthropic/claude-opus-4-6",
+        //   ],
         // },
         // models: {
         //   "anthropic/claude-haiku-4-5": { alias: "haiku" },
         //   "anthropic/claude-sonnet-4-5": { alias: "sonnet" },
         //   "anthropic/claude-opus-4-6": { alias: "opus" }
         // }
-      }
+      },
     },
     channels: {
-      telegram: { enabled: true }
+      telegram: { enabled: true },
     },
     plugins: {
       entries: {
-        telegram: { enabled: true }
-      }
-    }
+        telegram: { enabled: true },
+      },
+    },
   };
 
   const merged = deepMerge(cfg, patch);
@@ -82,15 +91,19 @@ function writeMcporterConfigIfMissing() {
   const config = {
     mcpServers: {
       senpi: {
-        baseUrl: mcpUrl,
-        description: "Senpi Hyperliquid MCP (remote HTTP)",
-        headers: {
-          // NOTE: mcporter expands env vars at runtime; file will still show placeholder
-          Authorization: "Bearer $env:SENPI_MCP_TOKEN"
-        }
-      }
+        command: "npx",
+        args: [
+          "mcp-remote",
+          mcpUrl,
+          "--header",
+          "Authorization: Bearer ${SENPI_AUTH_TOKEN}",
+        ],
+        env: {
+          SENPI_AUTH_TOKEN: "",
+        },
+      },
     },
-    imports: []
+    imports: [],
   };
 
   fs.writeFileSync(MCPORTER_PATH, JSON.stringify(config, null, 2));
@@ -104,7 +117,7 @@ export function bootstrapOpenClaw() {
   ensureDir(STATE_SKILLS_DIR);
   copyDirIfMissing(
     path.join(IMAGE_SKILLS_DIR, "mcporter"),
-    path.join(STATE_SKILLS_DIR, "mcporter")
+    path.join(STATE_SKILLS_DIR, "mcporter"),
   );
 
   writeMcporterConfigIfMissing();
