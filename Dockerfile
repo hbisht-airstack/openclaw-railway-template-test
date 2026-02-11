@@ -79,6 +79,13 @@ RUN pnpm install --prod --frozen-lockfile && pnpm store prune
 # Install MCPorter CLI so the mcporter skill can execute it
 RUN pnpm install -g mcporter
 
+# Vendor mcporter skill from OpenClaw repo into image
+RUN set -eux; \
+  mkdir -p /opt/openclaw-skills; \
+  git clone --depth 1 https://github.com/openclaw/openclaw.git /tmp/openclaw; \
+  cp -r /tmp/openclaw/skills/mcporter /opt/openclaw-skills/; \
+  rm -rf /tmp/openclaw
+
 # Copy built openclaw
 COPY --from=openclaw-build /openclaw /openclaw
 
