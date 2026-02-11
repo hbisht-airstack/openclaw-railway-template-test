@@ -1,17 +1,16 @@
-const fs = require("fs");
-const path = require("path");
+import fs from "node:fs";
+import path from "node:path";
 
 const STATE_DIR = process.env.OPENCLAW_STATE_DIR || "/data/.openclaw";
-const MCPORTER_PATH = process.env.MCPORTER_CONFIG || path.join(STATE_DIR, "config", "mcporter.json");
+const MCPORTER_PATH =
+  process.env.MCPORTER_CONFIG || path.join(STATE_DIR, "config", "mcporter.json");
 
 function ensureDir(p) {
   fs.mkdirSync(p, { recursive: true });
 }
 
 function writeIfMissing(filePath, content) {
-  if (!fs.existsSync(filePath)) {
-    fs.writeFileSync(filePath, content);
-  }
+  if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, content);
 }
 
 function deepMerge(target, patch) {
@@ -30,25 +29,12 @@ function patchOpenClawJson() {
   const cfgPath = path.join(STATE_DIR, "openclaw.json");
   if (!fs.existsSync(cfgPath)) return;
 
-  const raw = fs.readFileSync(cfgPath, "utf8");
-  const cfg = JSON.parse(raw);
+  const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
 
   const patch = {
-    // Ensure Telegram channel + plugin enabled
-    channels: {
-      telegram: { enabled: true }
-    },
-    plugins: {
-      entries: {
-        telegram: { enabled: true }
-      }
-    },
-    // Ensure OpenClaw loads bundled skills
-    skills: {
-      load: {
-        extraDirs: ["/opt/openclaw-skills"]
-      }
-    }
+    channels: { telegram: { enabled: true } },
+    plugins: { entries: { telegram: { enabled: true } } },
+    skills: { load: { extraDirs: ["/opt/openclaw-skills"] } },
   };
 
   const merged = deepMerge(cfg, patch);
@@ -56,34 +42,24 @@ function patchOpenClawJson() {
 }
 
 function writeMcporterConfig() {
-  const dir = path.dirname(MCPORTER_PATH);
-  ensureDir(dir);
+  ensureDir(path.dirname(MCPORTER_PATH));
 
   const mcpUrl = process.env.SENPI_MCP_URL || "https://mcp.dev.senpi.ai/mcp";
 
-  // Use env var interpolation for token (do NOT write token into file)
   const config = {
     mcpServers: {
       senpi: {
         baseUrl: mcpUrl,
         description: "Senpi Hyperliquid MCP (remote HTTP)",
-        headers: {
-          Authorization: "Bearer $env:SENPI_MCP_TOKEN"
-        }
-      }
+        headers: { Authorization: "Bearer $env:SENPI_MCP_TOKEN" },
+      },
     },
-    imports: []
+    imports: [],
   };
 
   writeIfMissing(MCPORTER_PATH, JSON.stringify(config, null, 2));
 }
 
-function main() {
-  // Make sure state dir exists (volume mounted)
-  ensureDir(STATE_DIR);
-
-  writeMcporterConfig();
-  patchOpenClawJson();
-}
-
-main();
+ensureDir(STATE_DIR);
+writeMcporterConfig();
+patchOpenClawJson();
